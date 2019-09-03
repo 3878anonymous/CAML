@@ -58,9 +58,10 @@ def make_batch(data, bsz, i):
 def pad_to_max(seq, seq_max, pad_token=0):
     ''' Pad Sequence to sequence max
     '''
-    while(len(seq)<seq_max):
-        seq.append(pad_token)
-    return seq[:seq_max]
+    new_seq = seq[:]
+    while(len(new_seq)<seq_max):
+        new_seq.append(pad_token)
+    return new_seq[:seq_max]
 
 def prep_flat_data_dict(data_dict, smax, dmax):
     ''' Prepares flat data dictionary for ranking

@@ -480,8 +480,10 @@ class CFExperiment(Experiment):
             #load_reviews
             self.ui_review_dict, self.iu_review_dict = self.load_review_data(data_link, "review")
             self.ui_concept_dict, self.iu_concept_dict = self.load_review_data(data_link, "concepts")
-            self.num_users = len(self.ui_review_dict)
-            self.num_items = len(self.iu_review_dict)
+            #self.num_users = len(self.ui_review_dict)
+            #self.num_items = len(self.iu_review_dict)
+            self.num_users = max(self.ui_review_dict.keys()) + 1
+            self.num_items = max(self.iu_review_dict.keys()) + 1
 
 
         self.write_to_file("Train={} Dev={} Test={}".format(

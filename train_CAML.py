@@ -33,7 +33,7 @@ from utilities import *
 from collections import defaultdict
 import sys
 from nltk.corpus import stopwords
-from nltk.translate.bleu_score import corpus_bleu
+#from nltk.translate.bleu_score import corpus_bleu
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
@@ -47,7 +47,7 @@ from tylib.exp.exp_ops import *
 from parser_CAML import *
 from sklearn.metrics import mean_absolute_error
 
-from Rouge155_modify import Rouge155
+#from Rouge155_modify import Rouge155
 
 
 PAD = "<PAD>"
@@ -477,8 +477,10 @@ class CFExperiment(Experiment):
             #load_reviews
             self.ui_review_dict, self.iu_review_dict = self.load_review_data(data_link, "review")
             self.ui_concept_dict, self.iu_concept_dict = self.load_review_data(data_link, "concepts")
-            self.num_users = len(self.ui_review_dict)
-            self.num_items = len(self.iu_review_dict)
+            #self.num_users = len(self.ui_review_dict)
+            #self.num_items = len(self.iu_review_dict)
+            self.num_users = max(self.ui_review_dict.keys()) + 1
+            self.num_items = max(self.iu_review_dict.keys()) + 1
 
 
         self.write_to_file("Train={} Dev={} Test={}".format(
@@ -501,11 +503,11 @@ class CFExperiment(Experiment):
         dev_user_entropies = []
         dev_item_entropies = []
 
-        mkdir_p(self.out_dir + "/rouge_out")
-        gen_dir = self.out_dir + "/rouge_out/gen_dir_" + set_type
-        ref_dir = self.out_dir + "/rouge_out/ref_dir_" + set_type
-        mkdir_p(gen_dir)
-        mkdir_p(ref_dir)
+        #mkdir_p(self.out_dir + "/rouge_out")
+        #gen_dir = self.out_dir + "/rouge_out/gen_dir_" + set_type
+        #ref_dir = self.out_dir + "/rouge_out/ref_dir_" + set_type
+        #mkdir_p(gen_dir)
+        #mkdir_p(ref_dir)
 
         gen_sentences = []
         ref_sentences = []
@@ -520,42 +522,7 @@ class CFExperiment(Experiment):
                 continue
             feed_dict = self.mdl.get_feed_dict(batch, mode='testing')
 
-            #evaluate generation quality using first 20 batchs
-            if i<20:
-                loss, preds, gen_loss, gen_acc, word_att1, word_att2, gen_results  = self.sess.run([self.mdl.task_cost,
-                            predict_op, self.mdl.gen_loss, self.mdl.gen_acc, self.mdl.word_att1, self.mdl.word_att2, self.mdl.gen_results], feed_dict)
-
-                for j in range(bsz):
-                    new_sentence= []
-                    f = open(gen_dir + '/gen_review.'+str(bsz * i + j).zfill(final_length) +'.txt', 'w+')
-                    #for t in xrange(args.beamsize):
-                    for k in range(len(gen_results[j*self.args.beam_size])):
-                        if (gen_results[j*self.args.beam_size][k]==self.word_index[EOS]):
-                            break
-                        if k!=0:
-                            f.write(' ')
-                        f.write(self.index_word[gen_results[j*self.args.beam_size][k]])
-                        new_sentence.append(self.index_word[gen_results[j*self.args.beam_size][k]])
-                    f.close()
-                    gen_sentences.append(new_sentence)
-
-                    new_sentence= []
-                    f1 = open(ref_dir + '/true_review.A.'+str(bsz * i + j).zfill(final_length)+'.txt', 'w+')
-                    for k in range(len(batch[j][self.mdl.imap['gen_outputs']])):
-                        if (batch[j][self.mdl.imap['gen_outputs']][k]==self.word_index[EOS]):
-                            break
-                        if k==0:
-                            continue
-                        if k!=1:
-                            f1.write(' ')
-                        f1.write(self.index_word[batch[j][self.mdl.imap['gen_outputs']][k]])
-                        new_sentence.append(self.index_word[batch[j][self.mdl.imap['gen_outputs']][k]])
-                    #f1.write('\n')
-                    f1.close()
-                    ref_sentences.append([new_sentence])
-
-            else:
-                loss, preds, gen_loss, gen_acc, word_att1, word_att2  = self.sess.run([self.mdl.task_cost,
+            loss, preds, gen_loss, gen_acc, word_att1, word_att2  = self.sess.run([self.mdl.task_cost,
                             predict_op, self.mdl.gen_loss, self.mdl.gen_acc, self.mdl.word_att1, self.mdl.word_att2], feed_dict)
 
             for k in range(len(batch)):
@@ -605,22 +572,6 @@ class CFExperiment(Experiment):
                 return 1
             else:
                 return x
-
-        #cal Rouge
-        rouge_args = "-e ROUGE-1.5.5/data -n 4 -2 4 -u -c 95 -r 1000 -f A -p 0.5 -t 0 -a"
-        r = Rouge155(rouge_args=rouge_args)
-        r.system_dir = gen_dir
-        r.model_dir = ref_dir
-        r.system_filename_pattern = 'gen_review.(\d+).txt'
-        r.model_filename_pattern = 'true_review.A.#ID#.txt'
- 
-        output = r.convert_and_evaluate()
-
-        self.write_to_file(output)
-
-        #cal Bleu
-        score = corpus_bleu(ref_sentences, gen_sentences)
-        self.write_to_file(str(score))
 
         acc_preds = [clip_labels(round(x)) for x in all_preds]
         acc = accuracy_score(actual_labels, acc_preds)

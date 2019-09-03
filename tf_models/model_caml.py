@@ -1129,7 +1129,7 @@ class Model:
 
                         self.cost = tf.reduce_sum(self.hinge_loss)
 
-                    self.cost = self.cost * self.args.rating_lambda
+                    #self.cost = self.cost * self.args.rating_lambda
 
                     #with tf.name_scope('regularization'):
                     #    if(self.args.l2_reg>0):
